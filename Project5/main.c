@@ -24,6 +24,7 @@ int setup()
 	lcd_clr();
 	SET_BIT(DDRA, 0);
 	
+	
 	/*
 	for(int i = 0; i < 16; i++){
 		keypad_pressed[i] = 0;
@@ -76,8 +77,10 @@ typedef struct Note{
 } Note;
 
 Note notes[10];
-int song_length = 30;
-int some_notes[] = {2,2,2,-1,2,2,2,-1,2,4,0,7,2,-1,3,3,3,3,3,2,2,6,6,2,1,1,2,1,-2,4};
+int jingle_bells[] = {4,4,4,-1,4,4,4,-1,4,6,2,3,4,-1,5,5,5,5,5,4,4,8,8,4,3,3,4,3,-2,6};		    
+int jingle_size = sizeof(jingle_bells)/sizeof(jingle_bells[0]);
+int mary_lambs[] = {4,3,2,3,4,4,4,3,3,3,4,6,6,4,3,2,3,4,4,4,4,3,3,4,3,2};
+int mary_size = sizeof(mary_lambs)/sizeof(mary_lambs[0]);
 //TODO: (You need to add 2 songs) and their lengths, use the value -5 to signal the end
 // of the string so we dont have to keep track of the length?
 
@@ -92,36 +95,32 @@ void inst_Jingle(int pitch_scalar, int duration){
 	// TODO: IMPLEMENT THIS
 	// FILL IN THE REST OF THE NOTES FREQUENCY AND DURATION
 	
-	// A - 220
-	
-	//A# / Bb - 233.082
-	
-	//B - 246.942
-	
-	notes[0].freq = pitch_scalar*261; //C
+	notes[0].freq = pitch_scalar*220; // A - 220
 	notes[0].duration = duration;
 	
-	
-	//C# - 277.183
-	
-	notes[1].freq = pitch_scalar*293; //D
+	notes[1].freq = pitch_scalar*246; //B - 246.942
 	notes[1].duration = duration;
 	
-	// D# 311.127
-	
-	notes[2].freq = pitch_scalar*330;//E
+	notes[2].freq = pitch_scalar*261; //C
 	notes[2].duration = duration;
-	notes[3].freq = pitch_scalar*349; //F
+	
+	notes[3].freq = pitch_scalar*293; //D
 	notes[3].duration = duration;
 	
-	// F# 370
-	notes[4].freq = pitch_scalar*392; //G
+	notes[4].freq = pitch_scalar*330;//E
 	notes[4].duration = duration;
 	
-	// G# 415.305
+	notes[8].freq = pitch_scalar*330;//E FAST
+	notes[8].duration = duration/2;
 	
-	notes[5].freq = 1;
-	notes[5].duration = 200;
+	notes[5].freq = pitch_scalar*349; //F
+	notes[5].duration = duration;
+	
+	notes[6].freq = pitch_scalar*392; //G
+	notes[6].duration = duration;
+	
+	notes[7].freq = 1; //REST
+	notes[7].duration = 200;
 }
 
 void play_note(Note myNote){
@@ -148,6 +147,12 @@ void play_note(Note myNote){
 }
 
 void play_song(int song[], int length){
+	lcd_clr();
+	char top_row[16];
+	sprintf(top_row, "Now playing");
+	lcd_pos(0,0);
+	lcd_puts2(top_row);
+	
 	for(int i = 0; i < length; i++){
 		if(song[i] == -1){
 			wait(500);
@@ -167,6 +172,19 @@ void play_song(int song[], int length){
 //		3) Dont leave me 3) Tell me you love me
 void display_song_list(){
 	// TODO:
+	// after prompt_start_game = A = yes
+	char top_row[16];
+	char bot_row[16];
+	lcd_pos(0,0);
+	sprintf(top_row, "Jingle Bells:1");
+	lcd_puts2(top_row);
+	
+	lcd_pos(1,0);
+	sprintf(bot_row, "Mary Lamb:2");
+	lcd_puts2(bot_row);
+	
+	//avr_wait(500);
+	return ;
 }
 
  // ========== END SPEAKER/MUSIC FUNCTIONS =================
@@ -201,9 +219,20 @@ void display_song_list(){
  // ======= GAME ===========================================
  void prompt_start_game(){
 	 // TODO: Prompt the user asking them if they want to start the game
+	 
+	 lcd_clr();
+	 char bot_row[16];
+	 lcd_pos(0,0);
+	 sprintf(bot_row, "Play? A=y,B=n");
+	 lcd_puts2(bot_row);
+
+	 return ;
  }
  
+ 
+ 
  // ===== END GAME =========================================
+ // thanos dies
 
 /*
 	Description:
@@ -218,26 +247,133 @@ void display_song_list(){
 	num_right doesnt change. If the user gets it right then the total and num_right is incremented.
 
 */
+int chosen_song[30];
+int chosen_length = 0;
+void copy_song(int song[], int length) {
+		for (int i = 0; i < length; i++) {
+			chosen_song[i] = song[i];
+		}
+		chosen_length = length;
+}
 
+int n = 0;
+void move_notes() {
+	char top_row[16];
+	sprintf(top_row, "C");
+	lcd_pos(0,n);
+	lcd_puts2(top_row);
+	avr_wait(500);
+	for (int n = 0; n < 16; n++) {
+		lcd_clr();
+		printf(top_row, "C");
+		lcd_pos(0,n);
+		lcd_puts2(top_row);
+		avr_wait(500);
+	}
+}
+
+enum state {init, pick_song, jingle_bell, mary_lamb, start, play, quit};
 int main(void)
 {
 	//local variables
 	int k;
-	unsigned short state = 0;
+	//unsigned short state = 0;
 	unsigned short song_index;
 	unsigned short note_index;
 	
 	// setting up
-	setup();
+	//setup();
 	
 	// main logic
+	enum state curr_state;
+	curr_state = init; //initialize
     while (1) 
     {	
+		//prompt_start_game();
+		//play_song(jingle_bells, 29);
+		
+		//execute states
+		switch(curr_state) {
+			//this will direct states
+			case init:
+				setup();
+				break;
+			case pick_song:
+				display_song_list();
+				break;
+			case jingle_bell:
+				//load the jingle bells array
+				copy_song(jingle_bells, jingle_size);
+				break;
+			case mary_lamb:
+				//load mary lamb array
+				copy_song(mary_lambs, mary_size);
+				break;
+			case start:
+				prompt_start_game();
+				break;
+			case play:
+				//need to implement notes on screen
+				//play_song(chosen_song, chosen_length);
+				move_notes();
+				break;
+		}
+		//direct states
+		switch(curr_state) {
+			case init:
+				curr_state = pick_song;
+				break;
+			case pick_song:
+				while (!is_pressed(0,0) || !is_pressed(0,1)) { //have to choose either song
+					k = get_key();
+					if (k == 1) {
+						curr_state = jingle_bell;
+						break;
+					}
+					else if (k == 2){
+						curr_state = mary_lamb; //NOT IMPLEMENTED YET
+						break;
+					}
+				}
+				break;
+			case jingle_bell:
+				curr_state = start;
+				break;
+			case mary_lamb:
+				curr_state = start;
+				break;
+			case start:
+				while (!is_pressed(0,3) || !is_pressed(1,3)) { //A = yes, B = no
+					k = get_key();
+					if (k == 4) { //A
+						//start game
+						//play_song(jingle_bells,30); //plays jingle bells for now
+						curr_state = play;
+						break;
+					}
+					else if (k == 8) { //B
+						//restart
+						curr_state = pick_song;
+						break;
+					}
+				}
+				break;
+			case play:
+				curr_state = init;
+				break;	
+		}
+		
+    }
+}
+
+
+/*
 		switch(state){
+			//lcd_clr();
 			case 0: // prompt user to pick a song
 				display_song_list();
 				k = get_key();
-				if(k == 0){ // first song
+				if(k == 0){ // first song: #1
 					song_index = 0;
 					state = 1;
 				}
@@ -249,7 +385,7 @@ int main(void)
 			case 1: // prompt user to start game
 				prompt_start_game();
 				k = get_key();
-				if(k == '15'){
+				if(k == '15'){ //#
 					state = 2;
 					note_index = 0;
 				}
@@ -257,9 +393,6 @@ int main(void)
 			case 2: // play game
 				lcd_pos(0,0);
 				lcd_puts2("Starting Game");
+				
 		}
-    }
-}
-
-
-
+		*/
